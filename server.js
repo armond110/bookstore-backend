@@ -20,6 +20,19 @@ app.use(
 );
 app.use(express.json());
 
+// prima di gestire qualsiasi richiesta, ci assicuriamo che mongoose sia connesso.
+// Su Vercel ogni "funzione" può partire a freddo (cold start), quindi non possiamo
+// contare su una connessione fatta una volta sola all'avvio come in un server normale:
+// connectDB() qui dentro riusa la connessione se già aperta, altrimenti ne apre una nuova.
+app.use(async (req, res, next) => {
+  try {
+    await connectDB();
+    next();
+  } catch (err) {
+    next(err);
+  }
+});
+
 app.get("/", (req, res) => {
   res.json({ message: "Bookstore API is running" });
 });
@@ -34,8 +47,12 @@ app.use(errorHandler);
 
 const PORT = process.env.PORT || 5000;
 
-connectDB().then(() => {
+// su Vercel NON dobbiamo chiamare app.listen(): è la piattaforma stessa che
+// invoca la funzione ad ogni richiesta. Vercel imposta automaticamente la
+// variabile d'ambiente VERCEL, la usiamo per capire dove siamo in esecuzione.
+// In locale invece serve davvero, altrimenti il server non parte.
+if (!process.env.VERCEL) {
   app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
-});
+}
 
 export default app;
