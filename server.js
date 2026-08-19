@@ -6,6 +6,8 @@ import authRoutes from "./routes/auth.js";
 import bookRoutes from "./routes/books.js";
 import orderRoutes from "./routes/orders.js";
 import uploadRoutes from "./routes/upload.js";
+import paymentRoutes from "./routes/payments.js";
+import stripeWebhookHandler from "./routes/stripeWebhook.js";
 import { notFound, errorHandler } from "./middleware/errorHandler.js";
 
 dotenv.config();
@@ -18,6 +20,14 @@ app.use(
     credentials: true,
   })
 );
+
+// IMPORTANTE: il webhook di Stripe deve stare PRIMA di express.json().
+// Stripe ci manda il corpo della richiesta "raw" (i byte grezzi, non ancora
+// interpretati come JSON), perché la firma che verifica l'autenticità della
+// richiesta è calcolata su quei byte esatti — se li facessimo prima passare
+// da express.json() la firma non corrisponderebbe più.
+app.post("/api/payments/webhook", express.raw({ type: "application/json" }), stripeWebhookHandler);
+
 app.use(express.json());
 
 // prima di gestire qualsiasi richiesta, ci assicuriamo che mongoose sia connesso.
@@ -41,6 +51,7 @@ app.use("/api/auth", authRoutes);
 app.use("/api/books", bookRoutes);
 app.use("/api/orders", orderRoutes);
 app.use("/api/upload", uploadRoutes);
+app.use("/api/payments", paymentRoutes);
 
 app.use(notFound);
 app.use(errorHandler);

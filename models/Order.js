@@ -27,6 +27,10 @@ const orderSchema = new mongoose.Schema(
       enum: ["pending", "paid", "shipped", "delivered", "cancelled"],
       default: "pending",
     },
+    // id della sessione di pagamento Stripe che ha generato questo ordine.
+    // Serve per non creare due ordini uguali se la pagina di conferma
+    // viene ricaricata dopo il pagamento.
+    stripeSessionId: { type: String, unique: true, sparse: true },
   },
   { timestamps: true }
 );
