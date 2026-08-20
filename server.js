@@ -28,7 +28,11 @@ app.use(
 // da express.json() la firma non corrisponderebbe più.
 app.post("/api/payments/webhook", express.raw({ type: "application/json" }), stripeWebhookHandler);
 
-app.use(express.json());
+// il limite di default di Express (100kb) è troppo basso per un libro che
+// include un'immagine di copertina codificata in base64 dentro il JSON —
+// alziamolo a 5mb, che basta ampiamente per un'immagine fino a 2MB (il
+// limite che abbiamo messo nella rotta di upload) più il resto dei campi
+app.use(express.json({ limit: "5mb" }));
 
 // prima di gestire qualsiasi richiesta, ci assicuriamo che mongoose sia connesso.
 // Su Vercel ogni "funzione" può partire a freddo (cold start), quindi non possiamo
